@@ -23,12 +23,15 @@ class MyArray():
                     parent[0].grad += parent[1](grad)
                     if parent[0].parents != ():
                         next.append([(parent[0].parents, parent[0].grad)])
+                    parent = None
             parents_grad = sum(next, [])
             if len(parents_grad) == 0:
                 break
                 
 
-    
+    def __float__(self) -> float:
+        return self.a
+
     def __str__(self) -> str:
         return str(f"{self.a:.4f}")
     

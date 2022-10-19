@@ -1,3 +1,4 @@
+from re import X
 from myarray import MyArray
 
 class MyOptim:
@@ -16,13 +17,30 @@ class MyOptim:
                 MyArray.zero_grad(param)
 
 if __name__ == "__main__":
+    from module import Module
     from mylayer import MyLayer
-    linear1 = MyLayer.Linear(2, 64)
-    linear2 = MyLayer.Linear(64, 1)
-    relu = MyLayer.LeakeyReLu()
-    sigmoid = MyLayer.Sigmoid()
+    import pickle
+    class Model(Module):
+        def __init__(self):
+            self.linear1 = MyLayer.Linear(2, 16)
+            self.linear2 = MyLayer.Linear(16, 8)
+            self.linear3 = MyLayer.Linear(8, 4)
+            self.linear4 = MyLayer.Linear(4, 1)
+            self.relu = MyLayer.LeakeyReLu()
+            self.sigmoid = MyLayer.Sigmoid()
+        def __call__(self, inputs):
+            x = self.linear1(inputs)
+            x = self.relu(x)
+            x = self.linear2(x)
+            x = self.relu(x)
+            x = self.linear3(x)
+            x = self.relu(x)
+            x = self.linear4(x)
+            x = self.sigmoid(x)
+            return x
+    model = Model()
     
-    optim = MyOptim.SGD(params=[linear1.get_params(), linear2.get_params()], lr=1e-1)
+    optim = MyOptim.SGD(params=[model.linear1.get_params(), model.linear2.get_params(), model.linear3.get_params(), model.linear4.get_params()], lr=1e-5)
     inputs = MyArray.from_array([
         [0, 0],
         [0, 1],
@@ -35,16 +53,24 @@ if __name__ == "__main__":
         [1],
         [1]
     ])
-    epoch=5000
+    epoch=100
     for e in range(epoch):
         optim.zero_grad()
-        x = linear1(inputs)
-        x = relu(x)
-        x = linear2(x)
-        x = sigmoid(x)
+        x = model(inputs)
         loss = (x-targets)**2
         loss.sum().backward()
         optim.step()
         bar = int(e/epoch*40)
         print("\r[{}]{}".format("="*bar+"-"*(40-bar),loss.sum()), end="")
         del loss
+    
+    with open("state.pkl", "wb") as f:
+        model.eval()
+        pickle.dump(model.state_dict(), f)
+
+    with open("state.pkl", "rb") as f:
+        model = Model()
+        state = pickle.load(f)
+        model.load_dict(state)
+        pred = model(inputs)
+        print(pred)

@@ -1,9 +1,21 @@
 from myarray import MyArray
 import numpy as np
 
+class Layer:
+    def __init__(self):
+        self.weight = None
+        pass
+
+    def __call__(self):
+        pass
+
+    def get_params(self):
+        pass
+
 class MyLayer:
-    class Linear:
+    class Linear(Layer):
         def __init__(self, in_features, out_features, bias=True):
+            super().__init__()
             self.in_features = in_features
             self.out_features = out_features
             self.bias = bias
@@ -20,22 +32,25 @@ class MyLayer:
         def get_params(self):
             return self.weight
 
-    class ReLu:
+    class ReLu(Layer):
         def __init__(self):
+            super().__init__()
             pass
 
         def __call__(self, inputs):
             return np.array([i.ReLu() for i in inputs.reshape(-1)]).reshape(inputs.shape)
 
-    class LeakeyReLu:
+    class LeakeyReLu(Layer):
         def __init__(self):
+            super().__init__()
             pass
 
         def __call__(self, inputs):
             return np.array([i.LeakeyReLu() for i in inputs.reshape(-1)]).reshape(inputs.shape)
 
-    class Sigmoid:
+    class Sigmoid(Layer):
         def __init__(self):
+            super().__init__()
             pass
         
         def __call__(self, inputs):

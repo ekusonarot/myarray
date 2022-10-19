@@ -1,5 +1,5 @@
 import numpy as np
-from myarray import MyArray
+from mytorch.array import MyArray
 
 class Module:
     def __init__(self):

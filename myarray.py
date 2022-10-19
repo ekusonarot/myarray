@@ -21,9 +21,7 @@ class MyArray():
             for parents, grad in parents_grad:
                 for parent in parents:
                     parent[0].grad += parent[1](grad)
-                    if parent[0].parents != ():
-                        next.append([(parent[0].parents, parent[0].grad)])
-                    parent = None
+            next = [[(parent[0].parents, parent[0].grad) for parent in parents] for parents, _ in parents_grad ]
             parents_grad = sum(next, [])
             if len(parents_grad) == 0:
                 break
@@ -141,6 +139,7 @@ class MyArray():
 
     def Sigmoid(self):
         def sigmoid(x):
+            x = max(-1e+2, x)
             return 1./(1.+math.exp(-x))
         return MyArray(sigmoid(self.a), (self, lambda grad: (1.-sigmoid(self.a))*sigmoid(self.a)*grad))
 

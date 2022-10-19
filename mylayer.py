@@ -20,9 +20,9 @@ class MyLayer:
             self.out_features = out_features
             self.bias = bias
             if bias:
-                self.weight = MyArray.from_array(np.random.normal(size=(in_features+1, out_features)))
+                self.weight = MyArray.from_array(np.random.normal(size=(in_features+1, out_features), loc=0, scale=1))
             else:
-                self.weight = MyArray.from_array(np.random.normal(size=(in_features, out_features)))
+                self.weight = MyArray.from_array(np.random.normal(size=(in_features, out_features), loc=0, scale=1))
         
         def __call__(self, inputs):
             if self.bias:

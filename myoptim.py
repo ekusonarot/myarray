@@ -17,7 +17,7 @@ class MyOptim:
                 MyArray.zero_grad(param)
 
 if __name__ == "__main__":
-    from module import Module
+    from mymodule import Module
     from mylayer import MyLayer
     import pickle
     class Model(Module):
@@ -41,7 +41,7 @@ if __name__ == "__main__":
     model = Model()
     model.eval()
     model.train()
-    optim = MyOptim.SGD(params=[model.linear1.get_params(), model.linear2.get_params(), model.linear3.get_params(), model.linear4.get_params()], lr=1e-5)
+    optim = MyOptim.SGD(params=[model.linear1.get_params(), model.linear2.get_params(), model.linear3.get_params(), model.linear4.get_params()], lr=1e-7)
     inputs = MyArray.from_array([
         [0, 0],
         [0, 1],
@@ -54,7 +54,7 @@ if __name__ == "__main__":
         [1],
         [1]
     ])
-    epoch=100
+    epoch=300
     for e in range(epoch):
         optim.zero_grad()
         x = model(inputs)

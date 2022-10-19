@@ -5,7 +5,7 @@ class MyArray():
     def __init__(self, a, *parents):
         self.a = float(a)
         self.parents = parents
-        self.grad = None
+        self.grad = 0.
 
     def from_array(a):
         if type(a) != np.ndarray:
@@ -14,29 +14,18 @@ class MyArray():
         b = b.reshape(a.shape)
         return b
 
-    def backward(self, root=True):
-        '''
-        grad = 1. if self.grad==None else self.grad
-        for parent in self.parents:
-            if parent[0].grad == None:
-                parent[0].grad = parent[1](grad)
-            else:
-                parent[0].grad += parent[1](grad)
-        for parent in self.parents:
-            parent[0].backward()
-    '''
-        if root:
-            parents_grad = [(self.parents, 1.)]
+    def backward(self):
+        parents_grad = [(self.parents, 1.)]
+        while True:
+            next = []
             for parents, grad in parents_grad:
                 for parent in parents:
-                    if parent[0].grad == None:
-                        parent[0].grad = parent[1](grad)
-                    else:
-                        parent[0].grad += parent[1](grad)
-                for parent in parents:
-                    parents_grad.append(parent[0].backward(root=False))
-        else:
-            return self.parents, self.grad
+                    parent[0].grad += parent[1](grad)
+                    if parent[0].parents != ():
+                        next.append([(parent[0].parents, parent[0].grad)])
+            parents_grad = sum(next, [])
+            if len(parents_grad) == 0:
+                break
                 
 
     
@@ -51,14 +40,16 @@ class MyArray():
             return MyArray(self.a + other.a,
             (self, lambda grad: 1*grad),
             (other, lambda grad: 1*grad))
-        return MyArray(self.a + other, (self, lambda grad: 1*grad))
+        self.a += other
+        return self
 
     def __sub__(self, other):
         if type(self) == type(other):
             return MyArray(self.a - other.a,
             (self, lambda grad: 1*grad),
             (other, lambda grad: -1*grad))
-        return MyArray(self.a - other, (self, lambda grad: 1*grad))
+        self.a -= other
+        return self
     
     def __truediv__(self, other):
         if type(self) == type(other):
@@ -128,11 +119,11 @@ class MyArray():
     def grad(array):
         if type(array) != np.ndarray:
             raise RuntimeError("not np.ndarray")
-        grad = np.array([MyArray(i.grad) for i in array.reshape(-1,)]).reshape(array.shape)
+        grad = np.array([i.grad for i in array.reshape(-1,)]).reshape(array.shape)
         return grad
 
     def __zero_grad(self):
-        self.grad = None
+        self.grad = 0.
 
     def zero_grad(array):
         if type(array) != np.ndarray:

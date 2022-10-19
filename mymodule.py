@@ -28,4 +28,4 @@ class Module:
                 val.weight = MyArray.from_array(val.get_params())
 
     def get_params(self):
-        return [value.get_params() for value in self.__dict__.values()]
+        return [value.get_params() for value in self.__dict__.values() if type(value.get_params()) == np.ndarray]

@@ -80,6 +80,13 @@ class MyArray():
         if type(self) == type(other):
             raise RuntimeError("the derivative for 'other' is not implemented")
         return MyArray(self.a % other, (self, lambda grad: 1*grad))
+    
+    def exp(self):
+        a = min(1e+2, self.a)
+        return MyArray(math.exp(a), (self, lambda grad: math.exp(a)*grad))
+        
+    def log(self):
+        return MyArray(math.log(self.a), (self, lambda grad: 1/self.a*grad))
         
     def __pos__(self):
         return MyArray(+self.a, (self, lambda grad: 1*grad))
@@ -119,7 +126,7 @@ class MyArray():
     
     def grad(array):
         if type(array) != np.ndarray:
-            raise RuntimeError("not np.ndarray")
+            raise RuntimeError("not np.ndarray: {}".format(type(array)))
         grad = np.array([i.grad for i in array.reshape(-1,)]).reshape(array.shape)
         return grad
 
@@ -128,7 +135,7 @@ class MyArray():
 
     def zero_grad(array):
         if type(array) != np.ndarray:
-            raise RuntimeError("not np.ndarray")
+            raise RuntimeError("not np.ndarray: {}".format(type(array)))
         [i.__zero_grad() for i in array.reshape(-1,)]
 
     def ReLu(self):
@@ -148,6 +155,18 @@ class MyArray():
             return MyArray(self.a, (self, lambda grad: grad))
         else:
             return MyArray(self.a*negative_slope, (self, lambda grad: negative_slope*grad))
+    
+    def Exp(array):
+        if type(array) != np.ndarray:
+            raise RuntimeError("not np.ndarray: {}".format(type(array)))
+        return np.array([i.exp() for i in array.reshape(-1)]).reshape(array.shape)
+    
+    def Log(array):
+        if type(array) != np.ndarray:
+            raise RuntimeError("not np.ndarray: {}".format(type(array)))
+        return np.array([i.log() for i in array.reshape(-1)]).reshape(array.shape)
+
+
 
 def test1():
     x, y = 3., 2.
@@ -183,6 +202,24 @@ def test2():
     print(a.grad)
     print(b.grad)
 
+def test3():
+    array1 = [[1.,1.,10.],[1.,3.,1.]]
+    array2 = [[0.,0.,1.],[1.,0.,0.]]
+    from mylayer import MyLayer
+    a = MyArray.from_array(array1)
+    b = MyArray.from_array(array2)
+    c = MyLayer.Softmax()(a)
+    c = (b-c)**2
+    c.sum().backward()
+    print(MyArray.grad(a))
+    a = torch.tensor(array1, requires_grad=True)
+    b = torch.tensor(array2, requires_grad=True)
+    c = torch.nn.Softmax(dim=1)(a)
+    c = (b-c)**2
+    c.sum().backward()
+    print(a.grad)
+
+
 if __name__ == "__main__":
     import sys
     import torch
@@ -190,4 +227,6 @@ if __name__ == "__main__":
         test1()
     elif "test2" == sys.argv[1]:
         test2()
+    elif "test3" == sys.argv[1]:
+        test3()
     

@@ -15,17 +15,20 @@ class MyArray():
         return b
 
     def backward(self):
-        parents_grad = [(self.parents, 1.)]
+        self.grad = 1
+        nodes = [self]
         while True:
             next = []
-            for parents, grad in parents_grad:
-                for parent in parents:
-                    parent[0].grad += parent[1](grad)
-            next = [[(parent[0].parents, parent[0].grad) for parent in parents] for parents, _ in parents_grad ]
-            parents_grad = sum(next, [])
-            if len(parents_grad) == 0:
+            next_id = []
+            for node in nodes:
+                for parent in node.parents:
+                    parent[0].grad += parent[1](node.grad)
+                    if id(parent[0]) not in next_id:
+                        next.append(parent[0])
+                        next_id.append(id(parent[0]))
+            nodes = next
+            if len(nodes) == 0:
                 break
-                
 
     def __float__(self) -> float:
         return self.a

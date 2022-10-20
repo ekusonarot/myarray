@@ -1,32 +1,29 @@
 from mytorch.module import Module
 from mytorch.layer import Linear, LeakeyReLu, Softmax
-from mytorch.loss import CrossEntropyLoss
+from mytorch.loss import CrossEntropyLoss, MSELoss
 from mytorch.optim import Adam
 from mytorch.array import MyArray
 import numpy as np
 import pickle
 
 if __name__ == "__main__":
-    celoss = CrossEntropyLoss()
+    celoss = MSELoss()
     class Model(Module):
         def __init__(self):
-            self.linear1 = Linear(2, 20)
-            self.linear2 = Linear(20, 10)
-            self.linear3 = Linear(10, 2)
+            self.linear1 = Linear(2, 4)
+            self.linear2 = Linear(4, 2)
             self.relu = LeakeyReLu()
             self.softmax= Softmax()
         def __call__(self, inputs):
             x = self.linear1(inputs)
             x = self.relu(x)
             x = self.linear2(x)
-            x = self.relu(x)
-            x = self.linear3(x)
             x = self.softmax(x)
             return x
     model = Model()
     model.eval()
     model.train()
-    optim = Adam(params=model.get_params(), lr=1e-1)
+    optim = Adam(params=model.get_params(), lr=1e-2)
     inputs = MyArray.from_array([
         [0, 0],
         [0, 1],
@@ -39,7 +36,7 @@ if __name__ == "__main__":
         [1, 0],
         [1, 0]
     ])
-    epoch=10
+    epoch=1000
     for e in range(epoch):
         optim.zero_grad()
         x = model(inputs)

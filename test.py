@@ -1,29 +1,30 @@
 from mytorch.module import Module
-from mytorch.layer import Linear, LeakeyReLu, Softmax
-from mytorch.loss import CrossEntropyLoss, MSELoss
+from mytorch.layer import Linear, LeakeyReLu, Sigmoid
+from mytorch.loss import MSELoss
 from mytorch.optim import Adam
 from mytorch.array import MyArray
 import numpy as np
 import pickle
 
 if __name__ == "__main__":
-    celoss = MSELoss()
     class Model(Module):
         def __init__(self):
-            self.linear1 = Linear(2, 4)
-            self.linear2 = Linear(4, 2)
+            self.linear1 = Linear(2, 2)
+            self.linear2 = Linear(2, 1)
             self.relu = LeakeyReLu()
-            self.softmax= Softmax()
+            self.sigmoid= Sigmoid()
         def __call__(self, inputs):
             x = self.linear1(inputs)
             x = self.relu(x)
             x = self.linear2(x)
-            x = self.softmax(x)
+            x = self.sigmoid(x)
             return x
     model = Model()
     model.eval()
     model.train()
-    optim = Adam(params=model.get_params(), lr=1e-2)
+
+    celoss = MSELoss()
+    optim = Adam(params=model.get_params(), lr=1e-1)
     inputs = MyArray.from_array([
         [0, 0],
         [0, 1],
@@ -31,12 +32,12 @@ if __name__ == "__main__":
         [1, 1]
     ])
     targets = np.array([
-        [0, 1],
-        [1, 0],
-        [1, 0],
-        [1, 0]
+        [0],
+        [1],
+        [1],
+        [0]
     ])
-    epoch=1000
+    epoch=10000
     for e in range(epoch):
         optim.zero_grad()
         x = model(inputs)
@@ -50,7 +51,10 @@ if __name__ == "__main__":
     with open("state.pkl", "wb") as f:
         model.eval()
         pickle.dump(model.state_dict(), f)
-
+    inputs = MyArray.from_array([
+            [0, 1],
+            [1, 1],
+        ])
     with open("state.pkl", "rb") as f:
         model = Model()
         state = pickle.load(f)

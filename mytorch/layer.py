@@ -127,11 +127,12 @@ class ReLu(Layer):
         return np.array([i.ReLu() for i in inputs.reshape(-1)]).reshape(inputs.shape)
 
 class LeakeyReLu(Layer):
-    def __init__(self):
+    def __init__(self, negative_slope=0.01):
         super().__init__()
+        self.negative_slope = negative_slope
 
     def __call__(self, inputs):
-        return np.array([i.LeakeyReLu() for i in inputs.reshape(-1)]).reshape(inputs.shape)
+        return np.array([i.LeakeyReLu(self.negative_slope) for i in inputs.reshape(-1)]).reshape(inputs.shape)
 
 class Sigmoid(Layer):
     def __init__(self):

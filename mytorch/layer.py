@@ -1,4 +1,4 @@
-from mytorch.array import MyArray
+from mytorch.tensor import MyTensor as mt
 import numpy as np
 
 
@@ -29,10 +29,10 @@ class Layer:
         out_w = (W + 2 * pad - filter_w) // stride + 1
 
         # パディング
-        img = MyArray.from_array(np.pad(input_data, [(0, 0), (0, 0), (pad, pad), (pad, pad)], "constant"))
+        img = mt(np.pad(input_data, [(0, 0), (0, 0), (pad, pad), (pad, pad)], "constant"))
         
         # 出力データの受け皿を初期化
-        col = MyArray.from_array(np.zeros((N, C, filter_h, filter_w, out_h, out_w)))
+        col = mt(np.zeros((N, C, filter_h, filter_w, out_h, out_w)))
         
         # 行方向のインデックス
         for y in range(filter_h):
@@ -56,16 +56,16 @@ class Linear(Layer):
         super().__init__()
         self.in_features = in_features
         self.out_features = out_features
-        self.weight = MyArray.from_array(np.random.normal(size=(in_features, out_features), loc=0, scale=1))
+        self.weight = mt(np.random.normal(size=(in_features, out_features), loc=0, scale=1))
         self.bias_flag = bias
         self.bias = bias
         if bias:
-            self.bias = MyArray.from_array(np.zeros(out_features))
+            self.bias = mt(np.zeros(out_features))
         else:
             self.bias = 0.
     
     def __call__(self, inputs):
-        return np.dot(inputs, self.weight) + self.bias
+        return mt.dot(inputs, self.weight) + self.bias
     
     def get_params(self):
         return {"weight": self.weight, "bias": self.bias}
@@ -81,14 +81,14 @@ class Conv2d(Layer):
         self.dilation = dilation
         self.bias_flag = bias
         if bias:
-            self.bias = MyArray.from_array(np.random.normal(size=(1,out_channels,1,1), loc=0, scale=1))
-        self.weight = MyArray.from_array(
+            self.bias = mt(np.random.normal(size=(1,out_channels,1,1), loc=0, scale=1))
+        self.weight = mt(
             np.random.normal(size=(out_channels, in_channels*kernel_size*kernel_size),loc=0,scale=1)
         ).T
 
     def __call__(self, inputs):
         input_col, out_h, out_w = self.im2col(inputs, self.kernel_size, self.stride, self.padding)
-        return np.dot(input_col, self.weight).reshape(inputs.shape[0], out_h, out_w, -1).transpose(0, 3, 1, 2) + self.bias
+        return mt.dot(input_col, self.weight).reshape(inputs.shape[0], out_h, out_w, -1).transpose(0, 3, 1, 2) + self.bias
 
     def get_params(self):
         return {"weight": self.weight, "bias": self.bias}
@@ -118,7 +118,7 @@ class ReLu(Layer):
         super().__init__()
 
     def __call__(self, inputs):
-        return np.array([i.ReLu() for i in inputs.reshape(-1)]).reshape(inputs.shape)
+        return inputs.LeakeyReLu()
 
 class LeakeyReLu(Layer):
     def __init__(self, negative_slope=0.01):
@@ -126,7 +126,7 @@ class LeakeyReLu(Layer):
         self.negative_slope = negative_slope
 
     def __call__(self, inputs):
-        return np.array([i.LeakeyReLu(self.negative_slope) for i in inputs.reshape(-1)]).reshape(inputs.shape)
+        return inputs.LeakeyReLu(self.negative_slope)
 
 class Sigmoid(Layer):
     def __init__(self):
@@ -141,8 +141,8 @@ class Softmax(Layer):
         self.dim = dim
     
     def __call__(self, inputs):
-        max = np.max(inputs, axis=self.dim, keepdims=True).astype(np.float)
-        inputs = MyArray.Exp(inputs - max)
-        sum = np.sum(inputs, axis=self.dim, keepdims=True)
+        max = np.max(inputs.a, axis=self.dim, keepdims=True)
+        inputs = (inputs - max).exp()
+        sum = inputs.sum(axis=self.dim, keepdims=True)
         inputs = inputs/sum
         return inputs

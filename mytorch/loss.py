@@ -1,16 +1,16 @@
 import numpy as np
-from mytorch.array import MyArray
+from mytorch.tensor import MyTensor
 
 class MSELoss:
     def __init__(self):
         pass
 
     def __call__(self, y, t):
-        return (y-t)**2
+        return ((y-t)**2).sum()/y.a.shape[0]
 
 class CrossEntropyLoss:
-    def __init__(self):
-        pass
+    def __init__(self, dim=1):
+        self.dim = dim
 
     def __call__(self, y, t):
-        return -np.sum(MyArray.Log(y + 1e-7) * t, axis=1)
+        return -(t*(y+1e-7).log() + (-t+1)*(-y+1+1e-7).log()).sum()/y.a.shape[0]

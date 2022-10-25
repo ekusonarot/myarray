@@ -1,8 +1,9 @@
+import torch
 from mytorch.module import Module
-from mytorch.layer import Flatten, Linear, LeakeyReLu, MaxPool2d, Sigmoid, Conv2d
-from mytorch.loss import MSELoss
+from mytorch.layer import Flatten, Linear, LeakeyReLu, MaxPool2d, Sigmoid, Conv2d, Softmax
+from mytorch.loss import CrossEntropyLoss, MSELoss
 from mytorch.optim import Adam
-from mytorch.array import MyArray
+from mytorch.tensor import MyTensor
 import numpy as np
 import pickle
 import sys
@@ -11,32 +12,33 @@ def test1():
     class Model(Module):
         def __init__(self):
             self.linear1 = Linear(2, 2)
-            self.linear2 = Linear(2, 1)
+            self.linear2 = Linear(2, 2)
+            self.linear3 = Linear(2, 2)
             self.relu = LeakeyReLu()
-            self.sigmoid= Sigmoid()
+            self.softmax= Softmax()
         def __call__(self, inputs):
             x = self.linear1(inputs)
             x = self.relu(x)
             x = self.linear2(x)
-            x = self.sigmoid(x)
+            x = self.relu(x)
+            x = self.linear3(x)
+            x = self.softmax(x)
             return x
     model = Model()
-    model.eval()
-    model.train()
 
     celoss = MSELoss()
-    optim = Adam(params=model.get_params(), lr=1e-1)
-    inputs = MyArray.from_array([
+    optim = Adam(params=model.get_params(), lr=1e-2)
+    inputs = MyTensor([
         [0, 0],
         [0, 1],
         [1, 0],
         [1, 1]
     ])
     targets = np.array([
-        [0],
-        [1],
-        [1],
-        [0]
+        [0, 1],
+        [1, 0],
+        [1, 0],
+        [0, 1]
     ])
     epoch=10000
     for e in range(epoch):
@@ -50,14 +52,7 @@ def test1():
         del loss
     print("")    
     with open("state.pkl", "wb") as f:
-        model.eval()
         pickle.dump(model.state_dict(), f)
-    inputs = MyArray.from_array([
-            [0, 1],
-            [1, 0],
-            [1, 1],
-            [0, 0]
-        ])
     with open("state.pkl", "rb") as f:
         model = Model()
         state = pickle.load(f)
@@ -90,7 +85,7 @@ def test2():
     optim = Adam(model.get_params(), lr=1e-3)
     mseloss = MSELoss()
 
-    inputs = MyArray.from_array(np.random.rand(16,1,28,28))
+    inputs = MyTensor(np.random.rand(16,1,28,28))
     targets = np.array([[0.],[1.],[1.],[0.],[1.],[0.],[0.],[0.],[0.],[0.],[0.],[0.],[0.],[0.],[0.],[0.]])
 
     epoch=10
@@ -105,7 +100,6 @@ def test2():
         del loss
     print("")
     with open("state.pkl", "wb") as f:
-        model.eval()
         pickle.dump(model.state_dict(), f)
     inputs = inputs[:4]
     with open("state.pkl", "rb") as f:
@@ -115,6 +109,85 @@ def test2():
         pred = model(inputs)
         print(pred)
 
+def test3():
+    import torch
+    x = np.array([[0.8, 0.2],[0.3, 0.7]])
+    y = np.array([[1.0, 0.0],[1.0, 0.0]])
+    a = MyTensor(x)
+    b = MyTensor(y)
+    softmax = Softmax()
+    celoss = CrossEntropyLoss()
+    c = softmax(a)
+    c = celoss(c,b)
+    print(c)
+    c.sum().backward()
+    print("grad", a.grad)
+    softmax = torch.nn.Softmax(dim=1)
+    celoss = torch.nn.CrossEntropyLoss()
+    a = torch.tensor(x, requires_grad=True)
+    b = torch.tensor(y, requires_grad=True)
+    print()
+    #c = softmax(a)
+    c = celoss(a,b)
+    print(c)
+    c.sum().backward()
+    print("grad", a.grad)
+
+def test4():
+    import torch
+    a = np.array([[2.,3.],[5.,5.]])
+    x = MyTensor(a)
+    y = x.sum(axis=1)
+    print(y)
+    y.sum().backward()
+    print(x.grad)
+    x = torch.tensor(a, requires_grad=True)
+    y = x.sum(axis=1)
+    print(y)
+    y.sum().backward()
+    print(x.grad)
+
+def test5():
+    a = np.array([[5., 6.],[1., 2.]])
+    b = np.array([[3.], [4.]])
+    x = MyTensor(a)
+    y = MyTensor(b)
+    z = (x/y).log()
+    z.sum().backward()
+    print(x.grad)
+    print(y.grad)
+    print()
+    x = torch.tensor(a, requires_grad=True)
+    y = torch.tensor(b, requires_grad=True)
+    z = torch.log(x/y)
+    z.sum().backward()
+    print(x.grad)
+    print(y.grad)
+
+def test6():
+    import torch
+    x = np.array([[0.8, 0.2],[0.3, 0.7]])
+    y = np.array([[1.0, 0.0],[1.0, 0.0]])
+    a = MyTensor(x)
+    b = MyTensor(y)
+    c = a.exp()
+    sum = c.sum(axis=1, keepdims=True)
+    c = c/sum
+    print("c",c)
+    print("\nsum",sum)
+    c.sum().backward()
+    print("grad", a.grad)
+    a = torch.tensor(x, requires_grad=True)
+    b = torch.tensor(y, requires_grad=True)
+    print()
+    c = torch.exp(a)
+    sum = c.sum(dim=1)
+    c = c/sum
+    print("c",c)
+    print("\nsum",sum)
+    c.sum().backward()
+    print("grad", a.grad)
+
 if __name__ == "__main__":
     arg = sys.argv[1]
     print(arg)
@@ -122,3 +195,11 @@ if __name__ == "__main__":
         test1()
     elif arg == "test2":
         test2()
+    elif arg == "test3":
+        test3()
+    elif arg == "test4":
+        test4()
+    elif arg == "test5":
+        test5()
+    elif arg == "test6":
+        test6()

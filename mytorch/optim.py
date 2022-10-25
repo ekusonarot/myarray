@@ -1,4 +1,4 @@
-from mytorch.array import MyArray
+from mytorch.tensor import MyTensor
 import numpy as np
 
 class Optim:
@@ -11,7 +11,7 @@ class Optim:
             p = param
             if type(param) == dict:
                 p = param["params"]
-            MyArray.zero_grad(p)
+            MyTensor.zero_grad(p)
 
     def step(self):
         for i, param in enumerate(self.params):
@@ -33,7 +33,7 @@ class SGD(Optim):
         self.past_w = [None] * len(params)
 
     def update(self, param, lr, i):
-        grad = MyArray.grad(param)
+        grad = MyTensor.grad(param)
         if type(self.past_w[i]) == type(None):
             param -= (grad*lr)
             self.past_w[i] = (grad*lr)
@@ -50,7 +50,7 @@ class Adam(Optim):
         self.v = [None] * len(params)
     
     def update(self, param, lr, i):
-        grad = MyArray.grad(param)
+        grad = MyTensor.grad(param)
         if type(self.m[i]) == type(None):
             self.m[i] = self.betas[0]+grad*(1-self.betas[0])
             self.v[i] = self.betas[1]+grad**2*(1-self.betas[1])
@@ -86,7 +86,7 @@ if __name__ == "__main__":
     model.eval()
     model.train()
     optim = Adam(params=model.get_params(), lr=1e-1)
-    inputs = MyArray.from_array([
+    inputs = MyTensor([
         [0, 0],
         [0, 1],
         [1, 0],

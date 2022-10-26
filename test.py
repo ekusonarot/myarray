@@ -38,7 +38,7 @@ def test1():
         [0, 1],
         [1, 0],
         [1, 0],
-        [1, 0]
+        [0, 1]
     ])
     epoch=10000
     for e in range(epoch):

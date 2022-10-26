@@ -8,8 +8,11 @@ class MyTensor():
             self.a = np.array(a)
         # parents = [(parent, deriv, self, other)]
         self.parents = parents
+        for parent in parents:
+            parent[0].child_count += 1
         self.grad = np.zeros(self.a.shape)
         self.add = add
+        self.child_count = 0
 
     def backward(self):
         if self.a.shape != ():
@@ -21,7 +24,10 @@ class MyTensor():
             next_id = []
             for node in nodes:
                 for parent in node.parents:
+                    parent[0].child_count -= 1
                     parent[0].grad += parent[1](node.grad, parent[2], parent[3])
+                    if 0 < parent[0].child_count:
+                        continue
                     if id(parent[0]) not in next_id:
                         next.append(parent[0])
                         next_id.append(id(parent[0]))
@@ -165,13 +171,13 @@ class MyTensor():
         axis, keepdims = b
         size = a.shape[axis] if axis != None else None
         if size == None:
-            return np.ones(a.shape)*grad/np.size(a)
+            return np.ones(a.shape)*grad
         elif keepdims != None:
             grad = np.repeat(grad, size, axis=axis)
         else:
             grad = np.expand_dims(grad, axis=axis)
             grad = np.repeat(grad, size, axis=axis)
-        return grad/size
+        return grad
 
     def sum(self, axis=None, keepdims=False):
         x = self.a.sum(axis=axis, keepdims=keepdims)

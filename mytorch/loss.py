@@ -13,4 +13,4 @@ class CrossEntropyLoss:
         self.dim = dim
 
     def __call__(self, y, t):
-        return -(t*(y+1e-7).log() + (-t+1)*(-y+1+1e-7).log()).sum()/y.a.shape[0]
+        return -((-t+1)*(-y+1+1e-7).log() + t*(y+1e-7).log()).sum()/y.a.shape[0]/2

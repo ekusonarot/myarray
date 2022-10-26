@@ -12,44 +12,6 @@ class Layer:
 
     def get_params(self):
         pass
-
-    def im2col(self, input_data, kernel_size, stride=1, pad=0):
-        if isinstance(kernel_size, tuple):
-            filter_h = kernel_size[0]
-            filter_w = kernel_size[1]
-        else:
-            filter_h = kernel_size
-            filter_w = kernel_size
-        
-        # 入力データのサイズを取得
-        N, C, H, W = input_data.shape
-        
-        # 出力データのサイズを計算
-        out_h = (H + 2 * pad - filter_h) // stride + 1
-        out_w = (W + 2 * pad - filter_w) // stride + 1
-
-        # パディング
-        img = mt(np.pad(input_data, [(0, 0), (0, 0), (pad, pad), (pad, pad)], "constant"))
-        
-        # 出力データの受け皿を初期化
-        col = mt(np.zeros((N, C, filter_h, filter_w, out_h, out_w)))
-        
-        # 行方向のインデックス
-        for y in range(filter_h):
-            # 行方向の最大値を計算
-            y_max = y + stride * out_h
-            
-            # 列方向のインデックス
-            for x in range(filter_w):
-                # 列方向の最大値を計算
-                x_max = x + stride * out_w
-                
-                # フィルターのy,x要素に対応する入力データの要素を抽出
-                col[:, :, y, x, :, :] = img[:, :, y:y_max:stride, x:x_max:stride]
-        
-        # 出力サイズに整形
-        col = col.transpose(0, 4, 5, 1, 2, 3).reshape(N * out_h * out_w, -1)
-        return col, out_h, out_w
         
 class Linear(Layer):
     def __init__(self, in_features, out_features, bias=True):
@@ -84,10 +46,10 @@ class Conv2d(Layer):
             self.bias = mt(np.random.normal(size=(1,out_channels,1,1), loc=0, scale=1))
         self.weight = mt(
             np.random.normal(size=(out_channels, in_channels*kernel_size*kernel_size),loc=0,scale=1)
-        ).T
+        ).T()
 
     def __call__(self, inputs):
-        input_col, out_h, out_w = self.im2col(inputs, self.kernel_size, self.stride, self.padding)
+        input_col, out_h, out_w = inputs.im2col(self.kernel_size, self.stride, self.padding)
         return mt.dot(input_col, self.weight).reshape(inputs.shape[0], out_h, out_w, -1).transpose(0, 3, 1, 2) + self.bias
 
     def get_params(self):
@@ -133,7 +95,7 @@ class Sigmoid(Layer):
         super().__init__()
     
     def __call__(self, inputs):
-        return np.array([i.Sigmoid() for i in inputs.reshape(-1)]).reshape(inputs.shape)
+        return inputs.Sigmoid()
 
 class Softmax(Layer):
     def __init__(self, dim=1):

@@ -165,13 +165,13 @@ class MyTensor():
         axis, keepdims = b
         size = a.shape[axis] if axis != None else None
         if size == None:
-            return np.ones(a.shape)*grad 
+            return np.ones(a.shape)*grad/np.size(a)
         elif keepdims != None:
             grad = np.repeat(grad, size, axis=axis)
         else:
             grad = np.expand_dims(grad, axis=axis)
             grad = np.repeat(grad, size, axis=axis)
-        return grad
+        return grad/size
 
     def sum(self, axis=None, keepdims=False):
         x = self.a.sum(axis=axis, keepdims=keepdims)
@@ -279,7 +279,72 @@ class MyTensor():
             (self, MyTensor.__deriv_LeakeyReLu__, self.a, negative_slope)
         )
 
+    def __deriv_Softmax__(grad, a, b):
+        print(grad)
+        len = a.shape[b]
+        if b == 0:
+            g = np.array([[-a[i]*a[j] if i != j else a[i]*(1-a[j]) for i in range(len)] for j in range(len)]).sum(axis=b)
+        else:
+            g = np.array([[[-a[b,i]*a[b,j] if i != j else a[b,i]*(1-a[b,j]) for i in range(len)] for j in range(len)] for b in range(a.shape[0])]).sum(axis=b)
+        return g*grad
 
+    def Softmax(self, dim):
+        max = np.max(self.a, axis=dim, keepdims=True)
+        x = np.exp(self.a-max)
+        r = x/np.sum(x, axis=dim, keepdims=True)
+        return MyTensor(r,
+            (self, MyTensor.__deriv_Softmax__, r, dim)
+        )
+
+    def col2im(self):
+        pass
+
+    def im2col(self, kernel_size, stride=1, pad=0):
+        img = self.a
+        if isinstance(kernel_size, tuple):
+            filter_h = kernel_size[0]
+            filter_w = kernel_size[1]
+        else:
+            filter_h = kernel_size
+            filter_w = kernel_size
+        
+        # 入力データのサイズを取得
+        N, C, H, W = img.shape
+        
+        # 出力データのサイズを計算
+        out_h = (H + 2 * pad - filter_h) // stride + 1
+        out_w = (W + 2 * pad - filter_w) // stride + 1
+
+        # パディング
+        img = np.pad(img, [(0, 0), (0, 0), (pad, pad), (pad, pad)], "constant")
+        
+        # 出力データの受け皿を初期化
+        col = np.zeros((N, C, filter_h, filter_w, out_h, out_w))
+        
+        # 行方向のインデックス
+        for y in range(filter_h):
+            # 行方向の最大値を計算
+            y_max = y + stride * out_h
+            
+            # 列方向のインデックス
+            for x in range(filter_w):
+                # 列方向の最大値を計算
+                x_max = x + stride * out_w
+                
+                # フィルターのy,x要素に対応する入力データの要素を抽出
+                col[:, :, y, x, :, :] = img[:, :, y:y_max:stride, x:x_max:stride]
+        
+        # 出力サイズに整形
+        col = col.transpose(0, 4, 5, 1, 2, 3).reshape(N * out_h * out_w, -1)
+        return col, out_h, out_w
+    
+    def __deriv_reshape__(grad, a, b):
+        return grad.reshape(a.shape)
+
+    def reshape(self, *indices):
+        return MyTensor(self.a.reshape(indices),
+            (self, MyTensor.__deriv_reshape__, self.a, None)
+        )
 
 def test1():
     x, y = 3., 2.

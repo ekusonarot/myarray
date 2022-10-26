@@ -11,8 +11,8 @@ import sys
 def test1():
     class Model(Module):
         def __init__(self):
-            self.linear1 = Linear(2, 2)
-            self.linear2 = Linear(2, 2)
+            self.linear1 = Linear(2, 3)
+            self.linear2 = Linear(3, 2)
             self.linear3 = Linear(2, 2)
             self.relu = LeakeyReLu()
             self.softmax= Softmax()
@@ -26,7 +26,7 @@ def test1():
             return x
     model = Model()
 
-    celoss = MSELoss()
+    celoss = CrossEntropyLoss()
     optim = Adam(params=model.get_params(), lr=1e-2)
     inputs = MyTensor([
         [0, 0],
@@ -34,11 +34,11 @@ def test1():
         [1, 0],
         [1, 1]
     ])
-    targets = np.array([
+    targets = MyTensor([
         [0, 1],
         [1, 0],
         [1, 0],
-        [0, 1]
+        [1, 0]
     ])
     epoch=10000
     for e in range(epoch):
@@ -66,7 +66,7 @@ def test2():
             super().__init__()
             self.conv1 = Conv2d(1, 2, 3, 1, padding=3//2)
             self.maxpool1 = MaxPool2d(2, 2, 0)
-            self.relu = LeakeyReLu()
+            self.relu = LeakeyReLu(0.1)
             self.conv2 = Conv2d(2, 1, 3, 1, padding=3//2)
             self.flatten = Flatten()
             self.linear = Linear(14*14, 1)
@@ -82,7 +82,7 @@ def test2():
             x = self.sigmoid(x)
             return x
     model = Model()
-    optim = Adam(model.get_params(), lr=1e-3)
+    optim = Adam(params = model.get_params(), lr=1e-3)
     mseloss = MSELoss()
 
     inputs = MyTensor(np.random.rand(16,1,28,28))
@@ -111,19 +111,19 @@ def test2():
 
 def test3():
     import torch
-    x = np.array([[0.8, 0.2],[0.3, 0.7]])
-    y = np.array([[1.0, 0.0],[1.0, 0.0]])
+    x = np.array([[0.3, 0.7, 0.5],[1.0, 0.0, 0.1]])
+    y = np.array([[0.0, 1.0, 0.0],[1.0, 0.0, 0.0]])
     a = MyTensor(x)
     b = MyTensor(y)
     softmax = Softmax()
-    celoss = CrossEntropyLoss()
-    c = softmax(a)
-    c = celoss(c,b)
+    celoss = MSELoss()
+    #c = softmax(a)
+    c = celoss(a,b)
     print(c)
     c.sum().backward()
     print("grad", a.grad)
     softmax = torch.nn.Softmax(dim=1)
-    celoss = torch.nn.CrossEntropyLoss()
+    celoss = torch.nn.MSELoss()
     a = torch.tensor(x, requires_grad=True)
     b = torch.tensor(y, requires_grad=True)
     print()

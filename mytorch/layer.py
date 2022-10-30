@@ -98,8 +98,8 @@ class BatchNorm1d(Layer):
             mean = np.mean(input.a)
             std = np.std(input.a)
             input = (input-mean)/(std+self.eps)
-            self.moving_mean = self.moving_mean*self.momentum + mean*(1-self.momentum)
-            self.moving_std = self.moving_std*self.momentum + std*(1-self.momentum)
+            self.moving_mean = self.moving_mean*(1-self.momentum) + mean*self.momentum
+            self.moving_std = self.moving_std*(1-self.momentum) + std*self.momentum
         else:
             input = (input-self.moving_mean)/(self.moving_std+self.eps)
         return self.weight*input+self.bias
@@ -123,8 +123,8 @@ class BatchNorm2d(Layer):
             mean = np.mean(input.a, axis=(0,2,3), keepdims=True)
             std = np.std(input.a, axis=(0,2,3), keepdims=True)
             input = (input-mean)/(std+self.eps)
-            self.moving_mean = self.moving_mean*self.momentum + mean*(1-self.momentum)
-            self.moving_std = self.moving_std*self.momentum + std*(1-self.momentum)
+            self.moving_mean = self.moving_mean*(1-self.momentum) + mean*self.momentum
+            self.moving_std = self.moving_std*(1-self.momentum) + std*self.momentum
         else:
             input = (input-self.moving_mean)/(self.moving_std+self.eps)
         return self.weight*input+self.bias

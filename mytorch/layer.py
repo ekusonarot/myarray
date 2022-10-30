@@ -6,12 +6,19 @@ class Layer:
     def __init__(self):
         self.weight = None
         self.bias = None
+        self.training = True
 
     def __call__(self):
         pass
 
     def get_params(self):
         pass
+
+    def train(self):
+        self.training = True
+    
+    def eval(self):
+        self.training = False
         
 class Linear(Layer):
     def __init__(self, in_features, out_features, bias=True):
@@ -74,6 +81,56 @@ class Flatten(Layer):
     
     def __call__(self, input):
         return input.reshape(input.a.shape[0],-1)
+
+class BatchNorm1d(Layer):
+    def __init__(self, num_features, eps=1e-5, momentum=0.1):
+        super().__init__()
+        self.num_features = num_features
+        self.eps = eps
+        self.momentum = momentum
+        self.weight = mt(np.random.normal(size=(1,num_features), loc=0, scale=1))
+        self.bias = mt(np.random.normal(size=(1,num_features), loc=0, scale=1))
+        self.moving_mean = 0
+        self.moving_std = 1
+    
+    def __call__(self, input):
+        if self.training:
+            mean = np.mean(input.a)
+            std = np.std(input.a)
+            input = (input-mean)/(std+self.eps)
+            self.moving_mean = self.moving_mean*self.momentum + mean*(1-self.momentum)
+            self.moving_std = self.moving_std*self.momentum + std*(1-self.momentum)
+        else:
+            input = (input-self.moving_mean)/(self.moving_std+self.eps)
+        return self.weight*input+self.bias
+    
+    def get_params(self):
+        return {"weight": self.weight, "bias": self.bias}
+        
+class BatchNorm2d(Layer):
+    def __init__(self, num_features, eps=1e-5, momentum=0.1):
+        super().__init__()
+        self.num_features = num_features
+        self.eps = eps
+        self.momentum = momentum
+        self.weight = mt(np.random.normal(size=(1,num_features,1,1), loc=0, scale=1))
+        self.bias = mt(np.random.normal(size=(1,num_features,1,1), loc=0, scale=1))
+        self.moving_mean = 0
+        self.moving_std = 1
+    
+    def __call__(self, input):
+        if self.training:
+            mean = np.mean(input.a, axis=(0,2,3), keepdims=True)
+            std = np.std(input.a, axis=(0,2,3), keepdims=True)
+            input = (input-mean)/(std+self.eps)
+            self.moving_mean = self.moving_mean*self.momentum + mean*(1-self.momentum)
+            self.moving_std = self.moving_std*self.momentum + std*(1-self.momentum)
+        else:
+            input = (input-self.moving_mean)/(self.moving_std+self.eps)
+        return self.weight*input+self.bias
+    
+    def get_params(self):
+        return {"weight": self.weight, "bias": self.bias}
 
 class ReLu(Layer):
     def __init__(self):

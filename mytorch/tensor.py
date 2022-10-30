@@ -111,16 +111,24 @@ class MyTensor():
             (other, MyTensor.__deriv_sub2__, self.a, other.a), add=True)
 
     def __deriv_div1__(grad, a, b):
-        r = 1/b*grad
-        if r.shape != a.shape:
-            return r.sum(axis=-1, keepdims=True)
-        return r
+        grad = 1/b*grad
+        if grad.shape != a.shape:
+            for i in range(-1,-len(grad.shape)-1,-1):
+                if i < -len(a.shape):
+                    grad = grad.sum(axis=i, keepdims=True)
+                elif grad.shape[i] != a.shape[i]:
+                    grad = grad.sum(axis=i, keepdims=True)
+        return grad
 
     def __deriv_div2__(grad, a, b):
-        r = -1*a/(b**2)*grad
-        if r.shape != b.shape:
-            return r.sum(axis=-1, keepdims=True)
-        return r
+        grad = -1*a/(b**2)*grad
+        if grad.shape != b.shape:
+            for i in range(-1,-len(grad.shape)-1,-1):
+                if i < -len(b.shape):
+                    grad = grad.sum(axis=i, keepdims=True)
+                elif grad.shape[i] != b.shape[i]:
+                    grad = grad.sum(axis=i, keepdims=True)
+        return grad
     
     def __truediv__(self, other):
         if type(self) == type(other):
@@ -130,16 +138,24 @@ class MyTensor():
         return MyTensor(self.a / other, (self, MyTensor.__deriv_div1__, self.a, other))
         
     def __deriv_mul1__(grad, a, b):
-        r = b*grad
-        if r.shape != a.shape:
-            return r.sum(axis=-1, keepdims=True)
-        return r
+        grad = b*grad
+        if grad.shape != a.shape:
+            for i in range(-1,-len(grad.shape)-1,-1):
+                if i < -len(a.shape):
+                    grad = grad.sum(axis=i, keepdims=True)
+                elif grad.shape[i] != a.shape[i]:
+                    grad = grad.sum(axis=i, keepdims=True)
+        return grad
 
     def __deriv_mul2__(grad, a, b):
-        r = a*grad
-        if r.shape != b.shape:
-            return r.sum(axis=-1, keepdims=True)
-        return r
+        grad = a*grad
+        if grad.shape != b.shape:
+            for i in range(-1,-len(grad.shape)-1,-1):
+                if i < -len(b.shape):
+                    grad = grad.sum(axis=i, keepdims=True)
+                elif grad.shape[i] != b.shape[i]:
+                    grad = grad.sum(axis=i, keepdims=True)
+        return grad
 
     def __mul__(self, other):
         if type(self) == type(other):

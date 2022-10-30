@@ -20,3 +20,11 @@ class Module:
     def get_params(self):
         params = [[value.get_params()["weight"], value.get_params()["bias"]] for value in self.__dict__.values() if type(value.get_params()) != type(None)]
         return sum(params, [])
+    
+    def train(self):
+        for val in self.__dict__.values():
+            val.train()
+
+    def eval(self):
+        for val in self.__dict__.values():
+            val.eval()

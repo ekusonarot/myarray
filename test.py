@@ -1,6 +1,6 @@
 import torch
 from mytorch.module import Module
-from mytorch.layer import Flatten, Linear, LeakeyReLu, MaxPool2d, Sigmoid, Conv2d, Softmax
+from mytorch.layer import BatchNorm1d, BatchNorm2d, Flatten, Linear, LeakeyReLu, MaxPool2d, Sigmoid, Conv2d, Softmax
 from mytorch.loss import CrossEntropyLoss, MSELoss
 from mytorch.optim import Adam
 from mytorch.tensor import MyTensor
@@ -12,15 +12,19 @@ def test1():
     class Model(Module):
         def __init__(self):
             self.linear1 = Linear(2, 3)
+            self.bn1 = BatchNorm1d(3)
             self.linear2 = Linear(3, 2)
+            self.bn2 = BatchNorm1d(2)
             self.linear3 = Linear(2, 2)
             self.relu = LeakeyReLu()
             self.softmax= Softmax()
         def __call__(self, inputs):
             x = self.linear1(inputs)
             x = self.relu(x)
+            x = self.bn1(x)
             x = self.linear2(x)
             x = self.relu(x)
+            x = self.bn2(x)
             x = x.reshape(x.a.shape[0],-1).reshape(x.a.shape[0],x.a.shape[1])
             x = self.linear3(x)
             x = self.softmax(x)
@@ -58,38 +62,45 @@ def test1():
         model = Model()
         state = pickle.load(f)
         model.load_dict(state)
+        model.eval()
         pred = model(inputs)
         print(pred)
+        print(model.bn1.moving_mean, model.bn1.moving_std)
 
 def test2():
     class Model(Module):
         def __init__(self):
             super().__init__()
             self.conv1 = Conv2d(1, 2, 3, 1, padding=3//2)
-            self.maxpool1 = MaxPool2d(2, 2, 0)
+            self.bn1 = BatchNorm2d(2)
             self.relu = LeakeyReLu(0.1)
+            self.maxpool1 = MaxPool2d(2, 2, 0)
             self.conv2 = Conv2d(2, 1, 3, 1, padding=3//2)
+            self.bn2 = BatchNorm2d(1)
             self.flatten = Flatten()
             self.linear = Linear(196, 1)
             self.sigmoid = Sigmoid()
 
         def __call__(self, inputs):
             x = self.conv1(inputs)
-            x = self.maxpool1(x)
+            x = self.bn1(x)
             x = self.relu(x)
+            x = self.maxpool1(x)
             x = self.conv2(x)
+            x = self.bn2(x)
+            x = self.relu(x)
             x = self.flatten(x)
             x = self.linear(x)
             x = self.sigmoid(x)
             return x
     model = Model()
-    optim = Adam(params = model.get_params(), lr=1e-7)
+    optim = Adam(params = model.get_params(), lr=1e-2)
     mseloss = MSELoss()
 
     inputs = MyTensor(np.random.rand(16,1,28,28))
     targets = MyTensor([[0.],[1.],[1.],[0.],[1.],[0.],[0.],[0.],[0.],[0.],[0.],[0.],[0.],[0.],[0.],[0.]])
 
-    epoch=10000
+    epoch=1000
     for e in range(epoch):
         optim.zero_grad()
         x = model(inputs)

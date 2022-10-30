@@ -1,4 +1,5 @@
 import numpy as np
+from mytorch.tensor import MyTensor as mt
 import random
 
 class Dataloader:
@@ -17,10 +18,12 @@ class Dataloader:
         if len(self.dataset) <= self.start:
             if self.shuffle:
                 random.shuffle(self.indices)
+                self.start = 0
             raise StopIteration()
-        data = np.array([self.dataset[i] for i in self.indices[self.start:self.start+self.batch_size]])
+        x = mt([self.dataset[i][0] for i in self.indices[self.start:self.start+self.batch_size]])
+        target = mt([self.dataset[i][1] for i in self.indices[self.start:self.start+self.batch_size]])
         self.start += self.batch_size
-        return data
+        return x, target
 
 if __name__ == "__main__":
     dataset = np.arange(64)

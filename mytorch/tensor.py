@@ -241,7 +241,8 @@ class MyTensor():
         return 1/a*grad
 
     def log(self):
-        return MyTensor(np.log(self.a), (self, MyTensor.__deriv_log__, self.a, None))
+        a = np.where(1e-7<self.a, self.a, 1e-7)
+        return MyTensor(np.log(a), (self, MyTensor.__deriv_log__, a, None))
         
     def __pos__(self):
         return MyTensor(+self.a, (self, MyTensor.__deriv_add__, self.a, None))

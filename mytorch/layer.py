@@ -49,31 +49,31 @@ class Conv2d(Layer):
         ).T()
 
     def __call__(self, inputs):
-        input_col, out_h, out_w = inputs.im2col(self.kernel_size, self.stride, self.padding)
-        return mt.dot(input_col, self.weight).reshape(inputs.shape[0], out_h, out_w, -1).transpose(0, 3, 1, 2) + self.bias
+        input_col, out_h, out_w = inputs.im2col(self.kernel_size, self.kernel_size, self.stride, self.padding)
+        return mt.dot(input_col, self.weight).reshape(inputs.a.shape[0], out_h, out_w, -1).transpose(0, 3, 1, 2) + self.bias
 
     def get_params(self):
         return {"weight": self.weight, "bias": self.bias}
 
 class MaxPool2d(Layer):
-    def __init__(self, kernel_size, stride=None, padding=0, dilation=1):
+    def __init__(self, kernel_size, stride=1, padding=0, dilation=1):
         self.kernel_size = kernel_size
         self.stride = stride
         self.padding = padding
         self.dilation = dilation
     
     def __call__(self, inputs):
-        input_col, out_h, out_w = self.im2col(inputs, self.kernel_size, self.stride, self.padding)
+        input_col, out_h, out_w = inputs.im2col(self.kernel_size, self.kernel_size, self.stride, self.padding)
         input_col = input_col.reshape(-1,self.kernel_size**2)
-        input_col = np.max(input_col, axis=1)
-        return input_col.reshape(inputs.shape[0], out_h, out_w, -1).transpose(0, 3, 1, 2)
+        input_col = mt.max(input_col, axis=1)
+        return input_col.reshape(inputs.a.shape[0], out_h, out_w, -1).transpose(0, 3, 1, 2)
 
 class Flatten(Layer):
     def __init__(self):
         super().__init__()
     
     def __call__(self, input):
-        return input.reshape((input.shape[0],)+(-1,))
+        return input.reshape(input.a.shape[0],-1)
 
 class ReLu(Layer):
     def __init__(self):

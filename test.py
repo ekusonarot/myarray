@@ -21,6 +21,7 @@ def test1():
             x = self.relu(x)
             x = self.linear2(x)
             x = self.relu(x)
+            x = x.reshape(x.a.shape[0],-1).reshape(x.a.shape[0],x.a.shape[1])
             x = self.linear3(x)
             x = self.softmax(x)
             return x
@@ -69,7 +70,7 @@ def test2():
             self.relu = LeakeyReLu(0.1)
             self.conv2 = Conv2d(2, 1, 3, 1, padding=3//2)
             self.flatten = Flatten()
-            self.linear = Linear(14*14, 1)
+            self.linear = Linear(196, 1)
             self.sigmoid = Sigmoid()
 
         def __call__(self, inputs):
@@ -82,13 +83,13 @@ def test2():
             x = self.sigmoid(x)
             return x
     model = Model()
-    optim = Adam(params = model.get_params(), lr=1e-3)
+    optim = Adam(params = model.get_params(), lr=1e-7)
     mseloss = MSELoss()
 
     inputs = MyTensor(np.random.rand(16,1,28,28))
-    targets = np.array([[0.],[1.],[1.],[0.],[1.],[0.],[0.],[0.],[0.],[0.],[0.],[0.],[0.],[0.],[0.],[0.]])
+    targets = MyTensor([[0.],[1.],[1.],[0.],[1.],[0.],[0.],[0.],[0.],[0.],[0.],[0.],[0.],[0.],[0.],[0.]])
 
-    epoch=10
+    epoch=10000
     for e in range(epoch):
         optim.zero_grad()
         x = model(inputs)
@@ -101,7 +102,6 @@ def test2():
     print("")
     with open("state.pkl", "wb") as f:
         pickle.dump(model.state_dict(), f)
-    inputs = inputs[:4]
     with open("state.pkl", "rb") as f:
         model = Model()
         state = pickle.load(f)
@@ -115,20 +115,20 @@ def test3():
     y = np.array([[0.0, 1.0, 0.0],[1.0, 0.0, 0.0]])
     a = MyTensor(x)
     b = MyTensor(y)
-    softmax = Softmax()
+    sigmoid = Sigmoid()
     celoss = MSELoss()
-    #c = softmax(a)
-    c = celoss(a,b)
+    c = sigmoid(a)
+    #c = celoss(a,b)
     print(c)
     c.sum().backward()
     print("grad", a.grad)
-    softmax = torch.nn.Softmax(dim=1)
+    sigmoid = torch.nn.Sigmoid()
     celoss = torch.nn.MSELoss()
     a = torch.tensor(x, requires_grad=True)
     b = torch.tensor(y, requires_grad=True)
     print()
-    #c = softmax(a)
-    c = celoss(a,b)
+    c = sigmoid(a)
+    #c = celoss(a,b)
     print(c)
     c.sum().backward()
     print("grad", a.grad)

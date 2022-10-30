@@ -50,13 +50,21 @@ class MyTensor():
     
     def __deriv_add1__(grad, a, b):
         if grad.shape != a.shape:
-            return grad.sum(axis=0)
-        return grad
+            for i in range(-1,-len(grad.shape)-1,-1):
+                if i < -len(a.shape):
+                    grad = grad.sum(axis=i, keepdims=True)
+                elif grad.shape[i] != a.shape[i]:
+                    grad = grad.sum(axis=i, keepdims=True)
+        return grad.reshape(a.shape)
 
     def __deriv_add2__(grad, a, b):
         if grad.shape != b.shape:
-            return grad.sum(axis=0)
-        return grad
+            for i in range(-1,-len(grad.shape)-1,-1):
+                if i < -len(b.shape):
+                    grad = grad.sum(axis=i, keepdims=True)
+                elif grad.shape[i] != b.shape[i]:
+                    grad = grad.sum(axis=i, keepdims=True)
+        return grad.reshape(b.shape)
 
     def __add__(self, other):
         if type(other) != MyTensor:
@@ -273,8 +281,8 @@ class MyTensor():
         return (1.-a)*a*grad
 
     def Sigmoid(self):
-        x = max(-1e+2, self.a)
-        x = 1./(1.+math.exp(-x))
+        x = np.where(self.a<-1e+2, -1e+2, self.a)
+        x = 1./(1.+np.exp(-x))
         return MyTensor(x, (self, MyTensor.__deriv_Sigmoid__, x, None))
 
     def __deriv_LeakeyReLu__(grad, a, negative_slope):
@@ -302,47 +310,53 @@ class MyTensor():
             (self, MyTensor.__deriv_Softmax__, r, dim)
         )
 
-    def col2im(self):
-        pass
+    def col2im(col, input_shape, filter_h, filter_w, stride=1, pad=0):
+        N, C, H, W = input_shape
+        
+        out_h = (H-filter_h+pad*2)//stride+1
+        out_w = (W-filter_w+pad*2)//stride+1
+        
+        col = col.reshape(N, out_h, out_w, C, filter_h, filter_w).transpose(0, 3, 4, 5, 1, 2)
 
-    def im2col(self, kernel_size, stride=1, pad=0):
-        img = self.a
-        if isinstance(kernel_size, tuple):
-            filter_h = kernel_size[0]
-            filter_w = kernel_size[1]
-        else:
-            filter_h = kernel_size
-            filter_w = kernel_size
+        img = np.zeros((N, C, H + 2*pad + stride - 1, W + 2*pad + stride - 1))
         
-        # 入力データのサイズを取得
-        N, C, H, W = img.shape
-        
-        # 出力データのサイズを計算
-        out_h = (H + 2 * pad - filter_h) // stride + 1
-        out_w = (W + 2 * pad - filter_w) // stride + 1
-
-        # パディング
-        img = np.pad(img, [(0, 0), (0, 0), (pad, pad), (pad, pad)], "constant")
-        
-        # 出力データの受け皿を初期化
-        col = np.zeros((N, C, filter_h, filter_w, out_h, out_w))
-        
-        # 行方向のインデックス
-        for y in range(filter_h):
-            # 行方向の最大値を計算
-            y_max = y + stride * out_h
+        for y in range(filter_h):     
+            y_max = y + stride*out_h
             
-            # 列方向のインデックス
-            for x in range(filter_w):
-                # 列方向の最大値を計算
-                x_max = x + stride * out_w
+            for x in range(filter_w):          
+                x_max = x + stride*out_w
                 
-                # フィルターのy,x要素に対応する入力データの要素を抽出
-                col[:, :, y, x, :, :] = img[:, :, y:y_max:stride, x:x_max:stride]
+                img[:, :, y:y_max:stride, x:x_max:stride] += col[:,:,y,x,:,:]
+        return img[:, :, pad:pad+H, pad:pad+W]
+
+    def __deriv_im2col__(col_grad, input_shape, args):
+        grad = MyTensor.col2im(col_grad, input_shape, args[0], args[1], args[2], args[3])
+        return grad
+
+    def im2col(self, filter_h, filter_w, stride=1, pad=0, constant_values=0):
+        input_data = self.a
+        N, C, H, W = input_data.shape 
         
-        # 出力サイズに整形
-        col = col.transpose(0, 4, 5, 1, 2, 3).reshape(N * out_h * out_w, -1)
-        return col, out_h, out_w
+        out_h = (H-filter_h+pad*2)//stride+1
+        out_w = (W-filter_w+pad*2)//stride+1
+
+        img = np.pad(input_data, [(0,0), (0,0), (pad, pad), (pad, pad)],
+                    'constant', constant_values=constant_values)
+        
+        col = np.zeros((N, C, filter_h, filter_w, out_h, out_w))
+
+        for y in range(filter_h):
+            y_max = y + stride*out_h
+            
+            for x in range(filter_w):
+                x_max = x + stride*out_w
+                
+                col[:, :, y, x, :, :] = img[:,:,y:y_max:stride,x:x_max:stride]
+
+        col = col.transpose(0, 4, 5, 1, 2, 3).reshape(N*out_h*out_w, -1)
+        return MyTensor(col,
+            (self, MyTensor.__deriv_im2col__, (N, C, H, W), (filter_h, filter_w, stride, pad))
+        ), out_h, out_w
     
     def __deriv_reshape__(grad, a, b):
         return grad.reshape(a.shape)
@@ -351,6 +365,25 @@ class MyTensor():
         return MyTensor(self.a.reshape(indices),
             (self, MyTensor.__deriv_reshape__, self.a, None)
         )
+
+    def __deriv_transpose__(grad, a, b):
+        index = [None]*len(a)
+        for i in range(len(a)):
+            index[a[i]] = i
+        return grad.transpose(index)
+
+    def transpose(self, *indices):
+        return MyTensor(self.a.transpose(indices),
+            (self, MyTensor.__deriv_transpose__, indices, None)
+        )
+    
+    def max(input, axis=None):
+        ind = np.argmax(input.a, axis)
+        mask = np.zeros_like(input.a)
+        if axis==1:
+            for i in range(input.a.shape[0]):
+                mask[i,ind[i]] = 1
+        return (input*mask).sum(axis=axis, keepdims=True)
 
 def test1():
     x, y = 3., 2.

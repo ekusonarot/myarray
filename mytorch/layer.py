@@ -25,7 +25,7 @@ class Linear(Layer):
         super().__init__()
         self.in_features = in_features
         self.out_features = out_features
-        self.weight = mt(np.random.normal(size=(in_features, out_features), loc=0, scale=1))
+        self.weight = mt(np.random.normal(size=(in_features, out_features), loc=0, scale=np.sqrt(2/in_features)))
         self.bias_flag = bias
         self.bias = bias
         if bias:
@@ -50,9 +50,9 @@ class Conv2d(Layer):
         self.dilation = dilation
         self.bias_flag = bias
         if bias:
-            self.bias = mt(np.random.normal(size=(1,out_channels,1,1), loc=0, scale=1))
+            self.bias = mt(np.random.normal(size=(1,out_channels,1,1), loc=0, scale=np.sqrt(2/in_channels)))
         self.weight = mt(
-            np.random.normal(size=(out_channels, in_channels*kernel_size*kernel_size),loc=0,scale=1)
+            np.random.normal(size=(out_channels, in_channels*kernel_size*kernel_size),loc=0,scale=np.sqrt(2/in_channels))
         ).T()
 
     def __call__(self, inputs):
@@ -88,8 +88,8 @@ class BatchNorm1d(Layer):
         self.num_features = num_features
         self.eps = eps
         self.momentum = momentum
-        self.weight = mt(np.random.normal(size=(1,num_features), loc=0, scale=1))
-        self.bias = mt(np.random.normal(size=(1,num_features), loc=0, scale=1))
+        self.weight = mt(np.random.normal(size=(1,num_features), loc=0, scale=np.sqrt(2/num_features)))
+        self.bias = mt(np.random.normal(size=(1,num_features), loc=0, scale=np.sqrt(2/num_features)))
         self.moving_mean = 0
         self.moving_std = 1
     
@@ -113,8 +113,8 @@ class BatchNorm2d(Layer):
         self.num_features = num_features
         self.eps = eps
         self.momentum = momentum
-        self.weight = mt(np.random.normal(size=(1,num_features,1,1), loc=0, scale=1))
-        self.bias = mt(np.random.normal(size=(1,num_features,1,1), loc=0, scale=1))
+        self.weight = mt(np.random.normal(size=(1,num_features,1,1), loc=0, scale=np.sqrt(2/num_features)))
+        self.bias = mt(np.random.normal(size=(1,num_features,1,1), loc=0, scale=np.sqrt(2/num_features)))
         self.moving_mean = 0
         self.moving_std = 1
     

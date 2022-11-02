@@ -310,23 +310,6 @@ class MyTensor():
             (self, MyTensor.__deriv_LeakeyReLu__, self.a, negative_slope)
         )
 
-    def __deriv_Softmax__(grad, a, b):
-        print(grad)
-        len = a.shape[b]
-        if b == 0:
-            g = np.array([[-a[i]*a[j] if i != j else a[i]*(1-a[j]) for i in range(len)] for j in range(len)]).sum(axis=b)
-        else:
-            g = np.array([[[-a[b,i]*a[b,j] if i != j else a[b,i]*(1-a[b,j]) for i in range(len)] for j in range(len)] for b in range(a.shape[0])]).sum(axis=b)
-        return g*grad
-
-    def Softmax(self, dim):
-        max = np.max(self.a, axis=dim, keepdims=True)
-        x = np.exp(self.a-max)
-        r = x/np.sum(x, axis=dim, keepdims=True)
-        return MyTensor(r,
-            (self, MyTensor.__deriv_Softmax__, r, dim)
-        )
-
     def col2im(col, input_shape, filter_h, filter_w, stride=1, pad=0):
         N, C, H, W = input_shape
         
@@ -401,74 +384,4 @@ class MyTensor():
             for i in range(input.a.shape[0]):
                 mask[i,ind[i]] = 1
         return (input*mask).sum(axis=axis, keepdims=True)
-
-def test1():
-    x, y = 3., 2.
-    def test(a, b):
-        return a**2.-(b/2.+a)*3.+1.
-    a = MyTensor(x)
-    b = MyTensor(y)
-    c = test(a,b)
-    c.backward()
-    print(a.grad)
-    print(b.grad)
-    a = torch.tensor(x, requires_grad=True)
-    b = torch.tensor(y, requires_grad=True)
-    c = test(a,b)
-    c.backward()
-    print(a.grad)
-    print(b.grad)
-
-def test2():
-    x, y = [[1.,2.],[1., 2.]], [3., 4.]
-    def test(a, b):
-        return a*b-b/3+a**2+a
-    a = MyTensor(x)
-    b = MyTensor(y)
-    c = test(a,b).sum()
-    c.backward()
-    print(MyTensor.grad(a))
-    print(MyTensor.grad(b))
-    a = torch.tensor(x, requires_grad=True)
-    b = torch.tensor(y, requires_grad=True)
-    c = test(a,b).sum()
-    c.backward()
-    print(a.grad)
-    print(b.grad)
-
-def test3():
-    array1 = [[1.,1.,10.],[1.,3.,1.]]
-    array2 = [[0.,0.,1.],[1.,0.,0.]]
-    from layer import Softmax
-    a = MyTensor(array1)
-    b = MyTensor(array2)
-    c = Softmax()(a)
-    c = (b-c)**2
-    c.sum().backward()
-    print(MyTensor.grad(a))
-    a = torch.tensor(array1, requires_grad=True)
-    b = torch.tensor(array2, requires_grad=True)
-    c = torch.nn.Softmax(dim=1)(a)
-    c = (b-c)**2
-    c.sum().backward()
-    print(a.grad)
-
-def test4():
-    from layer import Conv2d
-    conv = Conv2d(3, 2)
-    a = MyTensor(np.ones((1,1,100,100)))
-    conv(a)
-
-
-if __name__ == "__main__":
-    import sys
-    import torch
-    if "test1" == sys.argv[1]:
-        test1()
-    elif "test2" == sys.argv[1]:
-        test2()
-    elif "test3" == sys.argv[1]:
-        test3()
-    elif "test4" == sys.argv[1]:
-        test4()
     

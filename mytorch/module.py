@@ -1,6 +1,3 @@
-import numpy as np
-from mytorch.tensor import MyTensor
-
 class Module:
     def __init__(self):
         pass

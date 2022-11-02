@@ -199,6 +199,26 @@ def test6():
     c.sum().backward()
     print("grad", a.grad)
 
+def test7():
+    from mytorch.layer import MaxPool2d
+    maxpool = MaxPool2d(2, 2)
+    a = MyTensor(np.arange(16).reshape(1,1,4,4))
+    b = maxpool(a)*2
+    print(a)
+    print(b)
+    b.sum().backward()
+    print(a.grad)
+
+def test8():
+    from mytorch.layer import Conv2d
+    conv = Conv2d(1, 3, 3)
+    a = MyTensor(np.arange(16).reshape(1,1,4,4))
+    b = conv(a)*2
+    print(a)
+    print(b)
+    b.sum().backward()
+    print(a.grad)
+
 if __name__ == "__main__":
     arg = sys.argv[1]
     print(arg)
@@ -214,3 +234,7 @@ if __name__ == "__main__":
         test5()
     elif arg == "test6":
         test6()
+    elif arg == "test7":
+        test7()
+    elif arg == "test8":
+        test8()

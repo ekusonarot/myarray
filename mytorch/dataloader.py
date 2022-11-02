@@ -16,9 +16,9 @@ class Dataloader:
 
     def __next__(self):
         if len(self.dataset) <= self.start:
+            self.start = 0
             if self.shuffle:
                 random.shuffle(self.indices)
-                self.start = 0
             raise StopIteration()
         x = mt([self.dataset[i][0] for i in self.indices[self.start:self.start+self.batch_size]])
         target = mt([self.dataset[i][1] for i in self.indices[self.start:self.start+self.batch_size]])

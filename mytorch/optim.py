@@ -11,7 +11,12 @@ class Optim:
             p = param
             if type(param) == dict:
                 p = param["params"]
-            MyTensor.zero_grad(p)
+                if type(p["weight"]) == MyTensor:
+                    p["weight"].zero_grad()
+                if type(p["bias"]) == MyTensor:
+                    p["bias"].zero_grad()
+                continue
+            p.zero_grad()
 
     def step(self):
         for i, param in enumerate(self.params):
@@ -21,6 +26,11 @@ class Optim:
                 p = param["params"]
                 if "lr" in param:
                     lr = param["lr"]
+                if type(p["weight"]) == MyTensor:
+                    self.update(p["weight"], lr, i)
+                if type(p["bias"]) == MyTensor:
+                    self.update(p["bias"], lr, i+len(self.params))
+                continue
             self.update(p, lr, i)
     
     def update(self, param, lr, i):
@@ -30,7 +40,7 @@ class SGD(Optim):
     def __init__(self, params, lr=1e-2, momentum=0.):
         super().__init__(params, lr)
         self.momentum = momentum
-        self.past_w = [None] * len(params)
+        self.past_w = [None] * len(params)*2
 
     def update(self, param, lr, i):
         grad = MyTensor.grad(param)
@@ -46,8 +56,8 @@ class Adam(Optim):
         super().__init__(params, lr)
         self.betas = betas
         self.eps = eps
-        self.m = [None] * len(params)
-        self.v = [None] * len(params)
+        self.m = [None] * len(params)*2
+        self.v = [None] * len(params)*2
     
     def update(self, param, lr, i):
         grad = MyTensor.grad(param)

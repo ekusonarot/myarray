@@ -35,13 +35,6 @@ class MyTensor():
             if len(nodes) == 0:
                 break
 
-    def b(self, node, next, next_id):
-        for parent in node.parents:
-            parent[0].grad += parent[1](node.grad, parent[2], parent[3])
-            if id(parent[0]) not in next_id:
-                next.append(parent[0])
-                next_id.append(id(parent[0]))
-
     def __str__(self) -> str:
         return str(self.a)
     

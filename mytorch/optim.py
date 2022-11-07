@@ -12,7 +12,7 @@ class Optim:
             if type(param) == dict:
                 for p in param.values():
                     if type(p) == MyTensor:
-                        p.zero_grad
+                        p.zero_grad()
                 continue
             param.zero_grad()
 
@@ -36,7 +36,7 @@ class SGD(Optim):
     def __init__(self, params, lr=1e-2, momentum=0.):
         super().__init__(params, lr)
         self.momentum = momentum
-        self.past_w = [None] * len(params)*2
+        self.past_w = [None] * len(params)*6
 
     def update(self, param, lr, i):
         grad = MyTensor.grad(param)
@@ -52,8 +52,12 @@ class Adam(Optim):
         super().__init__(params, lr)
         self.betas = betas
         self.eps = eps
-        self.m = [None] * len(params)*6
-        self.v = [None] * len(params)*6
+        if type(params[0]) == dict:
+            self.m = [None] * len(params)*6
+            self.v = [None] * len(params)*6
+        else:
+            self.m = [None] * len(params)
+            self.v = [None] * len(params)
     
     def update(self, param, lr, i):
         grad = MyTensor.grad(param)

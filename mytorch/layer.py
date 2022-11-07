@@ -43,21 +43,21 @@ class Linear(Layer):
             self.bias = 0.
         self.bayesian = bayesian
         if bayesian:
-            self.weight_loc = mt(np.zeros(shape=(in_features, out_features)))
-            self.weight_scale = mt(np.ones(shape=(in_features, out_features))*np.sqrt(2/in_features))
-            self.bias_loc = mt(np.zeros(shape=out_features))
-            self.bias_scale = mt(np.ones(shape=out_features)*np.sqrt(2/in_features))
+            self.weight_loc = mt(np.random.normal(loc=0, scale=np.sqrt(2/in_features), size=(in_features, out_features)))
+            self.weight_scale = mt(np.random.normal(loc=0, scale=np.sqrt(2/in_features), size=(in_features, out_features)))
+            self.bias_loc = mt(np.random.normal(loc=0, scale=np.sqrt(2/in_features), size=out_features))
+            self.bias_scale = mt(np.random.normal(loc=0, scale=np.sqrt(2/in_features), size=out_features))
             self.weight = None
             self.bias = None
     
     def __call__(self, inputs):
         if self.bayesian:
             mask = np.where(0<self.weight_scale,1,-1)
-            self.weight_scale *= mask
+            weight_scale = self.weight_scale * mask
             mask = np.where(0<self.bias_scale,1,-1)
-            self.bias_scale *= mask
-            weight = self.weight_loc + self.weight_scale*np.random.normal(0, 1, self.weight_loc.a.shape)
-            bias = self.bias_loc + self.bias_scale*np.random.normal(0, 1, self.bias_loc.a.shape)
+            bias_scale = self.bias_scale * mask
+            weight = weight_scale*np.random.normal(loc=0, scale=1, size=self.weight_loc.a.shape) + self.weight_loc
+            bias = self.bias_loc + bias_scale*np.random.normal(loc=0, scale=1, size=self.bias_loc.a.shape)
             return mt.dot(inputs, weight) + bias
         return mt.dot(inputs, self.weight) + self.bias
 
@@ -77,10 +77,10 @@ class Conv2d(Layer):
         ).T()
         self.bayesian = bayesian
         if bayesian:
-            self.weight_loc = mt(np.zeros(shape=(out_channels, in_channels*kernel_size*kernel_size))).T()
-            self.weight_scale = mt(np.ones(shape=(out_channels, in_channels*kernel_size*kernel_size))*np.sqrt(2/in_channels)).T()
-            self.bias_loc = mt(np.zeros(shape=(1,out_channels,1,1)))
-            self.bias_scale = mt(np.ones(shape=(1,out_channels,1,1))*np.sqrt(2/in_channels))
+            self.weight_loc = mt(np.random.normal(loc=0, scale=np.sqrt(2/in_channels), size=(out_channels, in_channels*kernel_size*kernel_size))).T()
+            self.weight_scale = mt(np.random.normal(loc=0, scale=np.sqrt(2/in_channels), size=(out_channels, in_channels*kernel_size*kernel_size))).T()
+            self.bias_loc = mt(np.random.normal(loc=0, scale=np.sqrt(2/in_channels), size=(1,out_channels,1,1)))
+            self.bias_scale = mt(np.random.normal(loc=0, scale=np.sqrt(2/in_channels), size=(1,out_channels,1,1)))
             self.weight = None
             self.bias = None
 
@@ -88,11 +88,11 @@ class Conv2d(Layer):
         input_col, out_h, out_w = inputs.im2col(self.kernel_size, self.kernel_size, self.stride, self.padding)
         if self.bayesian:
             mask = np.where(0<self.weight_scale,1,-1)
-            self.weight_scale *= mask
+            weight_scale = self.weight_scale * mask
             mask = np.where(0<self.bias_scale,1,-1)
-            self.bias_scale *= mask
-            weight = self.weight_loc + self.weight_scale*np.random.normal(0, 1, self.weight_loc.a.shape)
-            bias = self.bias_loc + self.bias_scale*np.random.normal(0, 1, self.bias_loc.a.shape)
+            bias_scale = self.bias_scale * mask
+            weight = weight_scale*np.random.normal(loc=0, scale=1, size=self.weight_loc.a.shape) + self.weight_loc
+            bias = self.bias_loc + bias_scale*np.random.normal(loc=0, scale=1, size=self.bias_loc.a.shape)
             return mt.dot(input_col, weight).reshape(inputs.a.shape[0], out_h, out_w, -1).transpose(0, 3, 1, 2) + bias
         return mt.dot(input_col, self.weight).reshape(inputs.a.shape[0], out_h, out_w, -1).transpose(0, 3, 1, 2) + self.bias
 
@@ -129,10 +129,10 @@ class BatchNorm1d(Layer):
         self.moving_std = 1
         self.bayesian = bayesian
         if bayesian:
-            self.weight_loc = mt(np.zeros(shape=(1,num_features)))
-            self.weight_scale = mt(np.ones(shape=(1,num_features))*np.sqrt(2/num_features))
-            self.bias_loc = mt(np.zeros(shape=(1,num_features)))
-            self.bias_scale = mt(np.ones(shape=(1,num_features))*np.sqrt(2/num_features))
+            self.weight_loc = mt(np.random.normal(loc=0, scale=np.sqrt(2/num_features), size=(1,num_features)))
+            self.weight_scale = mt(np.random.normal(loc=0, scale=np.sqrt(2/num_features), size=(1,num_features)))
+            self.bias_loc = mt(np.random.normal(loc=0, scale=np.sqrt(2/num_features), size=(1,num_features)))
+            self.bias_scale = mt(np.random.normal(loc=0, scale=np.sqrt(2/num_features), size=(1,num_features)))
             self.weight = None
             self.bias = None
 
@@ -148,11 +148,11 @@ class BatchNorm1d(Layer):
             input = (input-self.moving_mean)/(self.moving_std+self.eps)
         if self.bayesian:
             mask = np.where(0<self.weight_scale,1,-1)
-            self.weight_scale *= mask
+            weight_scale = self.weight_scale * mask
             mask = np.where(0<self.bias_scale,1,-1)
-            self.bias_scale *= mask
-            weight = self.weight_loc + self.weight_scale*np.random.normal(0, 1, self.weight_loc.a.shape)
-            bias = self.bias_loc + self.bias_scale*np.random.normal(0, 1, self.bias_loc.a.shape)
+            bias_scale = self.bias_scale * mask
+            weight = self.weight_loc + weight_scale*np.random.normal(loc=0, scale=1, size=self.weight_loc.a.shape)
+            bias = self.bias_loc + bias_scale*np.random.normal(loc=0, scale=1, size=self.bias_loc.a.shape)
             return weight*input+bias
         return self.weight*input+self.bias
         
@@ -168,10 +168,10 @@ class BatchNorm2d(Layer):
         self.moving_std = 1
         self.bayesian = bayesian
         if bayesian:
-            self.weight_loc = mt(np.zeros(shape=(1,num_features,1,1)))
-            self.weight_scale = mt(np.ones(shape=(1,num_features,1,1))*np.sqrt(2/num_features))
-            self.bias_loc = mt(np.zeros(shape=(1,num_features,1,1)))
-            self.bias_scale = mt(np.ones(shape=(1,num_features,1,1))*np.sqrt(2/num_features))
+            self.weight_loc = mt(np.random.normal(loc=0, scale=np.sqrt(2/num_features), size=(1,num_features,1,1)))
+            self.weight_scale = mt(np.random.normal(loc=0, scale=np.sqrt(2/num_features), size=(1,num_features,1,1)))
+            self.bias_loc = mt(np.random.normal(loc=0, scale=np.sqrt(2/num_features), size=(1,num_features,1,1)))
+            self.bias_scale = mt(np.random.normal(loc=0, scale=np.sqrt(2/num_features), size=(1,num_features,1,1)))
             self.weight = None
             self.bias = None
     
@@ -186,11 +186,11 @@ class BatchNorm2d(Layer):
             input = (input-self.moving_mean)/(self.moving_std+self.eps)
         if self.bayesian:
             mask = np.where(0<self.weight_scale,1,-1)
-            self.weight_scale *= mask
+            weight_scale = self.weight_scale * mask
             mask = np.where(0<self.bias_scale,1,-1)
-            self.bias_scale *= mask
-            weight = self.weight_loc + self.weight_scale*np.random.normal(0, 1, self.weight_loc.a.shape)
-            bias = self.bias_loc + self.bias_scale*np.random.normal(0, 1, self.bias_loc.a.shape)
+            bias_scale = self.bias_scale * mask
+            weight = self.weight_loc + weight_scale*np.random.normal(loc=0, scale=1, size=self.weight_loc.a.shape)
+            bias = self.bias_loc + bias_scale*np.random.normal(loc=0, scale=1, size=self.bias_loc.a.shape)
             return weight*input+bias
         return self.weight*input+self.bias
 

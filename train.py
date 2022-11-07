@@ -87,8 +87,6 @@ if __name__ == "__main__":
             optim.step()
             bar = int(progress/size*40)
             ac = accuracy(y, target)
-            if (model.conv1.weight.grad.max() < 1e-10):
-                print(" !! conv1.weight.grad zero")
             print("\r{}/{}[{}]loss: {} accuracy: {}".format(e,epoch,"="*bar+"-"*(40-bar),loss.sum(), ac), end="")
             del loss
         ac = 0

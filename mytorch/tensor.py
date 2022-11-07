@@ -11,7 +11,6 @@ class MyTensor():
         for parent in parents:
             parent[0].child_count += 1
         self.grad = np.zeros(self.a.shape)
-        self.add = add
         self.child_count = 0
 
     def backward(self):
@@ -63,14 +62,6 @@ class MyTensor():
         if type(other) != MyTensor:
             self.a += other
             return self
-        elif self.add:
-            self.a += other.a
-            self.parents += ((other, MyTensor.__deriv_add1__, self.a, other.a),)
-            return self
-        elif other.add:
-            other.a += self.a
-            other.parents += ((self, MyTensor.__deriv_add2__, self.a, other.a),)
-            return other
         else:
             return MyTensor(self.a + other.a,
             (self, MyTensor.__deriv_add1__, self.a, other.a),
@@ -90,14 +81,6 @@ class MyTensor():
         if type(other) != MyTensor:
             self.a -= other
             return self
-        elif self.add:
-            self.a -= other.a
-            self.parents += ((other, MyTensor.__deriv_sub2__, self.a, other.a),)
-            return self
-        elif other.add:
-            other.a = self.a - other.a
-            other.parents += ((self, MyTensor.__deriv_sub1__, self.a, other.a),)
-            return other
         else:
             return MyTensor(self.a - other.a,
             (self, MyTensor.__deriv_sub1__, self.a, other.a),

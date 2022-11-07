@@ -1,3 +1,4 @@
+from mytorch.tensor import MyTensor
 class Module:
     def __init__(self):
         pass
@@ -15,8 +16,18 @@ class Module:
                     self.__dict__[skey] = lval
 
     def get_params(self):
-        params = [[value.get_params()["weight"], value.get_params()["bias"]] for value in self.__dict__.values() if type(value.get_params()) != type(None)]
-        return sum(params, [])
+        params = []
+        for layer in self.__dict__.values():
+            param = layer.get_params()
+            if type(param) == type(None):
+                continue
+            for p in param.values():
+                if type(p) == type(None):
+                    continue
+                if type(p) == MyTensor:
+                    params.append(p)
+                    continue
+        return params
     
     def train(self):
         for val in self.__dict__.values():

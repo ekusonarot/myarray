@@ -8,15 +8,13 @@ class Optim:
 
     def zero_grad(self):
         for param in self.params:
-            p = param
+            param
             if type(param) == dict:
-                p = param["params"]
-                if type(p["weight"]) == MyTensor:
-                    p["weight"].zero_grad()
-                if type(p["bias"]) == MyTensor:
-                    p["bias"].zero_grad()
+                for p in param.values():
+                    if type(p) == MyTensor:
+                        p.zero_grad
                 continue
-            p.zero_grad()
+            param.zero_grad()
 
     def step(self):
         for i, param in enumerate(self.params):
@@ -26,11 +24,9 @@ class Optim:
                 p = param["params"]
                 if "lr" in param:
                     lr = param["lr"]
-                if type(p["weight"]) == MyTensor:
-                    self.update(p["weight"], lr, i)
-                if type(p["bias"]) == MyTensor:
-                    self.update(p["bias"], lr, i+len(self.params))
-                continue
+                for j, k in p.values():
+                    if type(k) == MyTensor:
+                        self.update(k, lr, 6*i+j)
             self.update(p, lr, i)
     
     def update(self, param, lr, i):
@@ -56,8 +52,8 @@ class Adam(Optim):
         super().__init__(params, lr)
         self.betas = betas
         self.eps = eps
-        self.m = [None] * len(params)*2
-        self.v = [None] * len(params)*2
+        self.m = [None] * len(params)*6
+        self.v = [None] * len(params)*6
     
     def update(self, param, lr, i):
         grad = MyTensor.grad(param)

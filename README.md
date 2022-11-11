@@ -2,10 +2,10 @@
 
 pytorchに似せて作った機械学習ライブラリです．
 
-# 機能
+# $機能$
 
-## Optimizer
-- momentamSGD(params, lr, momentum)
+# Optimizer
+## momentamSGD(params, lr, momentum)
 
 | arg | 説明 |
 | ---- | ---- |
@@ -13,7 +13,7 @@ pytorchに似せて作った機械学習ライブラリです．
 | lr | 学習率 |
 | momentum | モーメンタム |
 
-- Adam(params, lr, betas, eps)
+## Adam(params, lr, betas, eps)
 
 | arg | 説明 |
 | ---- | ---- |
@@ -22,27 +22,88 @@ pytorchに似せて作った機械学習ライブラリです．
 | betas | 勾配の移動平均とその2乗を計算するための係数 |
 | eps | 0除算を防ぐため |
 
-## Layer
-- Linear(in_features, out_features, bias=True)
+# Layer
+## Linear(in_features, out_features, bias=True, bayesian=False)
 
 | arg | 説明 |
 | ---- | ---- |
 | in_features | 入力数 |
 | out_features | 出力数 |
 | bias | バイアスの有無 |
+| bayesian | ベイジアンニューラルネットワーク |
 
-- ReLu
-- LeakeyReLu(negative_slope=0.01)
+
+## Conv2d(self, in_channels, out_channels, kernel_size, stride=1, padding=0, dilation=1, bias=True, bayesian=False)
+
+| arg | 説明 |
+| ---- | ---- |
+| in_features | 入力数 |
+| out_features | 出力数 |
+| kernel_size | カーネルサイズ |
+| stride | ストライド |
+| padding | パディング |
+| bias | バイアスの有無 |
+| bayesian | ベイジアンニューラルネットワーク |
+
+## MaxPool2d(self, kernel_size, stride=1, padding=0, dilation=1)
+
+| arg | 説明 |
+| ---- | ---- |
+| kernel_size | カーネルサイズ |
+| stride | ストライド |
+| padding | パディング |
+| bayesian | ベイジアンニューラルネットワーク |
+
+## Flatten()
+
+| arg | 説明 |
+| ---- | ---- |
+<br>
+
+## BatchNorm1d(self, num_features, eps=1e-5, momentum=0.1, bayesian=False)
+
+| arg | 説明 |
+| ---- | ---- |
+| num_features | 特徴数 |
+| eps | 0除算を防ぐため |
+| momentum | モーメンタム |
+| bayesian | ベイジアンニューラルネットワーク |
+
+## BatchNorm2d(self, num_features, eps=1e-5, momentum=0.1, bayesian=False)
+
+| arg | 説明 |
+| ---- | ---- |
+| num_features | 特徴数 |
+| eps | 0除算を防ぐため |
+| momentum | モーメンタム |
+| bayesian | ベイジアンニューラルネットワーク |
+
+## ReLu
+
+| arg | 説明 |
+| ---- | ---- |
+<br>
+
+## LeakeyReLu(negative_slope=0.01)
 
 | arg | 説明 |
 | ---- | ---- |
 | negative_slope | 入力が負の時の傾き |
 
-- Sigmoid
-- Conv2d(未実装)
+## Sigmoid()
 
-## Dataloader
-- Dataloader(dataset, batch_size, shuffle)
+| arg | 説明 |
+| ---- | ---- |
+<br>
+
+## Softmax()
+
+| arg | 説明 |
+| ---- | ---- |
+<br>
+
+# Dataloader
+## Dataloader(dataset, batch_size, shuffle)
 
 | arg | 説明 |
 | ---- | ---- |
@@ -51,8 +112,8 @@ pytorchに似せて作った機械学習ライブラリです．
 | shuffle | シャッフルの有無 |
 
 
+# Module
 ## Module
-- Module
 
     モデルを作る際に継承することで，パラメータのロードや保存が簡単になる．
 
@@ -64,16 +125,16 @@ pytorchに似せて作った機械学習ライブラリです．
 | train | 学習モードに変更 |
 | get_params | 重みとバイアスをリストで出力 |
 
-## Loss
-- MSELoss
+# Loss
+## MSELoss
 
     平均二乗誤差
 
-- CrossEntropyLoss
+## CrossEntropyLoss
 
     クロスエントロピー誤差
 
-# 使い方
+# $使い方$
 この例では，XOR(排他的論理和)を学習し，モデルを保存，モデルをロード，ロードしたモデルで予測する過程を説明する．
 ```
 from mytorch.module import Module

@@ -17,56 +17,56 @@ class Optim:
             param.zero_grad()
 
     def step(self):
-        for i, param in enumerate(self.params):
+        for param in self.params:
             lr = self.lr
             p = param
             if type(param) == dict:
                 p = param["params"]
                 if "lr" in param:
                     lr = param["lr"]
-                for j, k in p.values():
+                for k in p.values():
                     if type(k) == MyTensor:
-                        self.update(k, lr, 6*i+j)
-            self.update(p, lr, i)
+                        self.update(k, lr)
+            self.update(p, lr)
     
-    def update(self, param, lr, i):
+    def update(self, param, lr):
         pass
 
 class SGD(Optim):
     def __init__(self, params, lr=1e-2, momentum=0.):
         super().__init__(params, lr)
         self.momentum = momentum
-        self.past_w = [None] * len(params)*6
+        self.past_w = {}
 
-    def update(self, param, lr, i):
+    def update(self, param, lr):
         grad = MyTensor.grad(param)
-        if type(self.past_w[i]) == type(None):
-            param -= (grad*lr)
-            self.past_w[i] = (grad*lr)
-        else:
+        i = id(param)
+        try:
             param -= (grad*lr+self.past_w[i]*self.momentum)
             self.past_w[i] = (grad*lr+self.past_w[i]*self.momentum)
+        except:
+            param -= (grad*lr)
+            self.past_w[i] = (grad*lr)
+
 
 class Adam(Optim):
     def __init__(self, params, lr=1e-3, betas=(0.9, 0.999), eps=1e-08):
         super().__init__(params, lr)
         self.betas = betas
         self.eps = eps
-        if type(params[0]) == dict:
-            self.m = [None] * len(params)*6
-            self.v = [None] * len(params)*6
-        else:
-            self.m = [None] * len(params)
-            self.v = [None] * len(params)
+        self.m = {}
+        self.v = {}
     
-    def update(self, param, lr, i):
+    def update(self, param, lr):
         grad = MyTensor.grad(param)
-        if type(self.m[i]) == type(None):
-            self.m[i] = self.betas[0]+grad*(1-self.betas[0])
-            self.v[i] = self.betas[1]+grad**2*(1-self.betas[1])
-        else:
+        i = id(param)
+        try:
             self.m[i] = self.m[i]*self.betas[0]+grad*(1-self.betas[0])
             self.v[i] = self.v[i]*self.betas[1]+grad**2*(1-self.betas[1])
+        except:
+            self.m[i] = self.betas[0]+grad*(1-self.betas[0])
+            self.v[i] = self.betas[1]+grad**2*(1-self.betas[1])
+
         m = self.m[i]/(1-self.betas[0])
         v = self.v[i]/(1-self.betas[1])
         param -= lr*m/np.sqrt(v+self.eps)
